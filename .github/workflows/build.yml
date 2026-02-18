@@ -3,12 +3,20 @@ name: GiantRocketship-tests
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
     container:
-     image: mcr.microsoft.com/playwright:v1.41.0-jammy
-    environment: automation
+      image: mcr.microsoft.com/playwright:v1.41.0-jammy
+
+    # Dynamic environment URL using GitHub context
+    environment:
+      name: automation
+      url: https://${GITHUB_REPOSITORY##*/}.github.io/${GITHUB_REPOSITORY##*/}/
+
     env:
       BASE_URL: ${{ secrets.BASE_URL }}
 
@@ -35,7 +43,7 @@ jobs:
           ref: gh-pages
           path: gh-pages
 
-      - name: Allure Report action
+      - name: Generate Allure Report
         if: always()
         uses: simple-elf/allure-report-action@master
         with:
@@ -47,6 +55,11 @@ jobs:
         if: always()
         uses: peaceiris/actions-gh-pages@v3
         with:
-          personal_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: ./allure-report
+
+      - name: Print dynamic Allure report link
+        if: always()
+        run: |
+          echo "Allure Report: https://$GITHUB_REPOSITORY.github.io/${GITHUB_REPOSITORY##*/}/"
